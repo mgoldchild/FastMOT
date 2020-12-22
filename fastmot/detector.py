@@ -1,15 +1,14 @@
+import configparser
 from collections import defaultdict
 from pathlib import Path
-import configparser
-import numpy as np
-import numba as nb
+
 import cv2
+import numpy as np
 
 from . import models
 from .utils import InferenceBackend
-from .utils.rect import as_rect, to_tlbr, get_size, area
-from .utils.rect import union, multi_crop, iom, nms
-
+from .utils.rect import (area, as_rect, get_size, iom, multi_crop, nms,
+                         to_tlbr, union)
 
 DET_DTYPE = np.dtype(
     [('tlbr', float, 4),
@@ -93,10 +92,9 @@ class SSDDetector(Detector):
         return detections.view(np.recarray)
 
     @staticmethod
-    @nb.njit(parallel=True, fastmath=True, cache=True)
     def _preprocess(frame, tiles, out, size):
         imgs = multi_crop(frame, tiles)
-        for i in nb.prange(len(imgs)):
+        for i in range(len(imgs)):
             offset = i * size
             bgr = imgs[i]
             # BGR to RGB
@@ -108,7 +106,6 @@ class SSDDetector(Detector):
             out[offset:offset + size] = normalized.ravel()
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _filter_dets(det_out, tiles, topk, label_mask, max_area, thresh, scale_factor):
         detections = []
         tile_ids = []
@@ -132,7 +129,6 @@ class SSDDetector(Detector):
         return detections, tile_ids
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _merge(dets, tile_ids, num_tile, thresh):
         # find duplicate neighbors across tiles
         neighbors = [[0 for _ in range(0)] for _ in range(len(dets))]
@@ -194,7 +190,6 @@ class YoloDetector(Detector):
         return detections
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _preprocess(frame, out):
         # BGR to RGB
         rgb = frame[..., ::-1]
@@ -205,7 +200,6 @@ class YoloDetector(Detector):
         out[:] = normalized.ravel()
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _filter_dets(det_out, size, class_ids, conf_thresh, nms_thresh, max_area):
         """
         det_out: a list of 3 tensors, where each tensor

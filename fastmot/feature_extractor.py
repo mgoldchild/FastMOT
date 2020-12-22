@@ -1,7 +1,7 @@
 from multiprocessing.pool import ThreadPool
-import numpy as np
-import numba as nb
+
 import cv2
+import numpy as np
 
 from . import models
 from .utils import InferenceBackend
@@ -65,7 +65,6 @@ class FeatureExtractor:
         self._normalize(img, idx, self.backend.input.host, self.input_size)
 
     @staticmethod
-    @nb.njit(fastmath=True, nogil=True, cache=True)
     def _normalize(img, idx, out, size):
         offset = idx * size
         # BGR to RGB

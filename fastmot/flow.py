@@ -1,12 +1,11 @@
-import logging
 import itertools
-import numpy as np
-import numba as nb
+import logging
+
 import cv2
+import numpy as np
 
-from .utils.rect import to_tlbr, get_size, get_center
-from .utils.rect import mask_area, intersection, crop, transform
-
+from .utils.rect import (crop, get_center, get_size, intersection, mask_area,
+                         to_tlbr, transform)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -199,13 +198,11 @@ class Flow:
         return next_bboxes, homography
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _estimate_feature_dist(target_area, feat_dist_factor):
         est_feat_dist = round(np.sqrt(target_area) * feat_dist_factor)
         return max(est_feat_dist, 1)
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _estimate_bbox(tlbr, affine_mat):
         tl = transform(tlbr[:2], affine_mat).ravel()
         scale = np.linalg.norm(affine_mat[:2, 0])
@@ -214,7 +211,6 @@ class Flow:
         return to_tlbr(np.append(tl, size))
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _rect_filter(pts, tlbr, fg_mask):
         if len(pts) == 0:
             return np.empty((0, 2), np.float32)
@@ -230,7 +226,6 @@ class Flow:
         return pts[keep]
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _ellipse_filter(pts, tlbr, offset):
         offset = np.asarray(offset, np.float32)
         pts = pts.reshape(-1, 2)
@@ -242,7 +237,6 @@ class Flow:
         return pts[keep]
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _fg_filter(prev_pts, cur_pts, fg_mask, frame_size):
         if len(cur_pts) == 0:
             return prev_pts, cur_pts
@@ -259,7 +253,6 @@ class Flow:
         return prev_pts[keep], cur_pts[keep]
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _scale_pts(pts, scale_factor):
         scale_factor = np.asarray(scale_factor, np.float32)
         pts = pts * scale_factor
@@ -267,7 +260,6 @@ class Flow:
         return pts
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _unscale_pts(pts, scale_factor, mask):
         scale_factor = np.asarray(scale_factor, np.float32)
         pts = pts.reshape(-1, 2)
@@ -279,12 +271,10 @@ class Flow:
         return pts
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _get_status(status, err, max_err):
         return status.ravel().astype(np.bool_) & (err.ravel() < max_err)
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _get_good_match(prev_pts, cur_pts, status, begin, end):
         keep = np.where(status[begin:end])
         prev_pts = prev_pts[begin:end][keep]
@@ -292,7 +282,6 @@ class Flow:
         return prev_pts, cur_pts
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _get_inliers(prev_pts, cur_pts, inlier_mask):
         keep = np.where(inlier_mask.ravel())
         return prev_pts[keep], cur_pts[keep]

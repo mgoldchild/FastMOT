@@ -1,20 +1,19 @@
-from collections import OrderedDict
 import itertools
 import logging
+from collections import OrderedDict
+
 import numpy as np
-import numba as nb
+from cython_bbox import bbox_overlaps
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-from cython_bbox import bbox_overlaps
 
-from .track import Track
 from .flow import Flow
-from .kalman_filter import MeasType, KalmanFilter
-from .utils.rect import as_rect, to_tlbr, iom
-
+from .kalman_filter import KalmanFilter, MeasType
+from .track import Track
+from .utils.rect import as_rect, iom, to_tlbr
 
 LOGGER = logging.getLogger(__name__)
-CHI_SQ_INV_95 = 9.4877 # 0.95 quantile of chi-square distribution
+CHI_SQ_INV_95 = 9.4877  # 0.95 quantile of chi-square distribution
 INF_COST = 1e5
 
 
@@ -315,7 +314,6 @@ class MultiTracker:
         return matches, unmatched_trk_ids, unmatched_det_ids
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _fuse_motion(cost, motion_dist, label, det_labels, max_cost, weight):
         gate = (cost > max_cost) | (motion_dist > CHI_SQ_INV_95) | (label != det_labels)
         cost = (1 - weight) * cost + weight * motion_dist
@@ -323,9 +321,8 @@ class MultiTracker:
         return cost
 
     @staticmethod
-    @nb.njit(parallel=True, fastmath=True, cache=True)
     def _gate_cost(cost, trk_labels, det_labels, thresh, maximize):
-        for i in nb.prange(len(cost)):
+        for i in range(len(cost)):
             if maximize:
                 gate = (cost[i] < thresh) | (trk_labels[i] != det_labels)
                 cost[i][gate] = 0

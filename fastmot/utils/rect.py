@@ -1,44 +1,36 @@
 import numpy as np
-import numba as nb
 
 
-@nb.njit(cache=True)
 def as_rect(tlbr):
     tlbr = np.asarray(tlbr, np.float64)
     tlbr = np.rint(tlbr)
     return tlbr
 
 
-@nb.njit(cache=True)
 def get_size(tlbr):
     tl, br = tlbr[:2], tlbr[2:]
     size = br - tl + 1
     return size
 
 
-@nb.njit(cache=True)
 def area(tlbr):
     size = get_size(tlbr)
     return int(size[0] * size[1])
 
 
-@nb.njit(cache=True)
 def mask_area(mask):
     return np.count_nonzero(mask)
 
 
-@nb.njit(cache=True)
 def get_center(tlbr):
     xmin, ymin, xmax, ymax = tlbr
     return np.array([(xmin + xmax) / 2, (ymin + ymax) / 2])
 
 
-@nb.njit(cache=True)
 def to_tlwh(tlbr):
     return np.append(tlbr[:2], get_size(tlbr))
 
 
-@nb.njit(cache=True)
 def to_tlbr(tlwh):
     tlwh = np.asarray(tlwh, np.float64)
     tlwh = np.rint(tlwh)
@@ -47,7 +39,6 @@ def to_tlbr(tlwh):
     return np.append(tl, br)
 
 
-@nb.njit(cache=True)
 def intersection(tlbr1, tlbr2):
     tl1, br1 = tlbr1[:2], tlbr1[2:]
     tl2, br2 = tlbr2[:2], tlbr2[2:]
@@ -59,7 +50,6 @@ def intersection(tlbr1, tlbr2):
     return tlbr
 
 
-@nb.njit(cache=True)
 def union(tlbr1, tlbr2):
     tl1, br1 = tlbr1[:2], tlbr1[2:]
     tl2, br2 = tlbr2[:2], tlbr2[2:]
@@ -69,20 +59,17 @@ def union(tlbr1, tlbr2):
     return tlbr
 
 
-@nb.njit(cache=True)
 def crop(img, tlbr):
     xmin, ymin, xmax, ymax = tlbr.astype(np.int_)
     return img[ymin:ymax + 1, xmin:xmax + 1]
 
 
-@nb.njit(cache=True)
 def multi_crop(img, tlbrs):
     tlbrs_ = tlbrs.astype(np.int_)
     return [img[tlbrs_[i][1]:tlbrs_[i][3] + 1, tlbrs_[i][0]:tlbrs_[i][2] + 1]
             for i in range(len(tlbrs_))]
 
 
-@nb.njit(fastmath=True, cache=True)
 def iom(tlbr1, tlbr2):
     """
     Computes intersection over minimum.
@@ -95,7 +82,6 @@ def iom(tlbr1, tlbr2):
     return area_intersection / area_minimum
 
 
-@nb.njit(fastmath=True, cache=True)
 def transform(pts, m):
     """
     Numba implementation of OpenCV's transform.
@@ -107,7 +93,6 @@ def transform(pts, m):
     return pts @ m.T
 
 
-@nb.njit(fastmath=True, cache=True)
 def perspective_transform(pts, m):
     """
     Numba implementation of OpenCV's perspectiveTransform.
@@ -121,7 +106,6 @@ def perspective_transform(pts, m):
     return pts[:2].T
 
 
-@nb.njit(fastmath=True, cache=True)
 def nms(tlwhs, scores, nms_thresh):
     """
     Applies the Non-Maximum Suppression algorithm on the bounding boxes [x, y, w, h]

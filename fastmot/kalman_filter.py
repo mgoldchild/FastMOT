@@ -1,6 +1,6 @@
 from enum import Enum
+
 import numpy as np
-import numba as nb
 
 from .utils.rect import get_size
 
@@ -180,7 +180,6 @@ class KalmanFilter:
         return self._maha_distance(projected_mean, projected_cov, measurements)
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def warp(mean, covariance, H):
         """
         Warps kalman filter state using a homography transformation.
@@ -245,9 +244,8 @@ class KalmanFilter:
         return mean, covariance
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _predict(mean, covariance, motion_mat, acc_cov, std_factor_acc, std_offset_acc):
-        size = max(mean[2:4] - mean[:2] + 1) # max(w, h)
+        size = max(mean[2:4] - mean[:2] + 1)  # max(w, h)
         std = std_factor_acc * size + std_offset_acc
         motion_cov = acc_cov * std**2
 
@@ -258,7 +256,6 @@ class KalmanFilter:
         return mean, covariance
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _project(mean, covariance, meas_mat, std_factor, min_std, multiplier):
         w, h = mean[2:4] - mean[:2] + 1
         std = np.array([
@@ -275,7 +272,6 @@ class KalmanFilter:
         return mean, innovation_cov
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _update(mean, covariance, proj_mean, proj_cov, measurement, meas_mat):
         kalman_gain = np.linalg.solve(proj_cov, (covariance @ meas_mat.T).T).T
         innovation = measurement - proj_mean
@@ -284,7 +280,6 @@ class KalmanFilter:
         return mean, covariance
 
     @staticmethod
-    @nb.njit(fastmath=True, cache=True)
     def _maha_distance(mean, covariance, measurements):
         diff = measurements - mean
         L = np.linalg.cholesky(covariance)
